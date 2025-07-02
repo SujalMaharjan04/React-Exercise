@@ -1,5 +1,5 @@
 import axios from 'axios'
-const baseurl = `${process.env.REACT_APP_API_URL}/api/notes`;
+const baseurl = '/api/notes';
 
 const getAll = () => {
     const request = axios.get(baseurl)
