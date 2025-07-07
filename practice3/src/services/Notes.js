@@ -3,11 +3,11 @@ const baseurl = '/api/notes';
 
 const getAll = () => {
     const request = axios.get(baseurl)
-    const newData = {
-        content: "This note is not added to the server",
-        important: true
-    }
-    return request.then(response => response.data.concat(newData))
+    // const newData = {
+    //     content: "This note is not added to the server",
+    //     important: true
+    // }
+    return request.then(response => response.data)
 }
 
 const create = newObject => {
