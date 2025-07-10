@@ -44,7 +44,7 @@ const generateId = () => {
 }
 
 
-app.post('/api/notes', (request, response) => {
+app.post('/api/notes', (request, response, next) => {
     const body = request.body;
 
     if (!body.content) {
@@ -60,7 +60,7 @@ app.post('/api/notes', (request, response) => {
     
     note.save().then(result => {
         response.json(result);
-    })
+    }).catch(error => next(error));
 })
 
 
@@ -93,6 +93,8 @@ const errorHandler = (err, req, res, next) => {
 
     if (err.name === 'CastError') {
         return res.status(400).send({error: 'Malformatted id'});
+    } else if (err.name === 'ValidationError') {
+        return res.status(400).json({error: err.message});
     }
 
     next(err);
