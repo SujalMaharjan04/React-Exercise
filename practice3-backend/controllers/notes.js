@@ -1,4 +1,4 @@
-const notesRouter = require('express').Router
+const notesRouter = require('express').Router()
 const Note = require('../models/notes')
 
 
