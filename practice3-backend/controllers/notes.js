@@ -1,9 +1,10 @@
 const notesRouter = require('express').Router()
 const Note = require('../models/notes')
+const User = require('../models/users')
 
 
 notesRouter.get('/', async(request, response) => {
-    const note = await Note.find({})
+    const note = await Note.find({}).populate('user', {username: 1, name: 1})
     
     response.json(note)
 })
@@ -32,6 +33,12 @@ const generateId = () => {
 notesRouter.post('/', async(request, response, next) => {
     const body = request.body;
 
+    const user = await User.findById(body.userId)
+
+    if (!user) {
+        return response.status(400).json({error: 'userId is missing or not valid'})
+    }
+
     if (!body.content) {
         return response.status(400).json ({
             error: "Content is Missing"
@@ -41,9 +48,12 @@ notesRouter.post('/', async(request, response, next) => {
     const note = new Note({
         content: body.content,
         important: body.important || false,
+        user: user._id
     })
 
     const savedNote = await note.save()
+    user.notes = user.notes.concat(savedNote)
+    await user.save()
     response.status(201).json(savedNote)
     
 })
