@@ -8,6 +8,7 @@ userRouter.get('/', async(request, response) => {
 
     response.json(result)
 })
+
 userRouter.post('/', async(request, response) => {
 
     const {username, name, password} = request.body

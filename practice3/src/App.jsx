@@ -1,6 +1,12 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useRef} from 'react'
 import Note from './component/Note'
 import noteServices from './services/Notes'
+import login from './services/login'
+import Togglable from './component/Togglable'
+import LoginForm from './component/LoginForm'
+import NoteForm from './component/NoteForm'
+import PropTypes from 'prop-types'
+
 
 
 const Notification = ( {message} ) => {
@@ -28,10 +34,11 @@ const Footer = () => {
 }
 const App = () => {
   const [notes, setNotes] = useState([])
-  const [newNotes, setNewNotes] = useState('')
   const [showAll, setShowAll] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
-
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [user, setUser] = useState(null)
 
   useEffect(()=> {
     noteServices
@@ -39,6 +46,15 @@ const App = () => {
       .then(initialNotes => {
         setNotes(initialNotes)
       })
+  }, [])
+
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem('loggedNoteAppUser')
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON)
+      setUser(user)
+      noteServices.setToken(user.token)
+    }
   }, [])
 
   const toggleImportanceOf = id => {
@@ -50,11 +66,9 @@ const App = () => {
       .then(requestedData => {
         setNotes(notes.map(note => note.id === id ? requestedData : note))
       })
-      .catch(error => {
-        setErrorMessage(
-          `Note: ${note.content} was already deleted from the server`
-        )
-        console.log(errorMessage)
+      .catch (error => {
+        setErrorMessage(`Note: ${note.content} was already deleted from the server`)
+        console.log(error)
         setTimeout(() => {
           setErrorMessage(null)
         }, 5000)
@@ -62,46 +76,78 @@ const App = () => {
       })
   }
   console.log('render', notes.length, 'notes')
-  const addNote = (event) => {
-    event.preventDefault();
-    const newObject = {
-      content: newNotes,
-      important: Math.random() < 0.5,
-    }
+
+  const addNote = (newObject) => {
+    noteFormRef.current.toggleVisibility()
     noteServices
       .create(newObject)
       .then(requestedData => {
         setNotes(notes.concat(requestedData))
-        setNewNotes('')
       })
     }
-
-  const handleClick = (event) => {
-    setNewNotes(event.target.value)
-  }
 
   const notestoShow = showAll
     ? notes 
     : notes.filter(note => note.important === true)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    
+    try {
+      const user = await login.login({username, password})
+      window.localStorage.setItem(
+        'loggedNoteAppUser', JSON.stringify(user)
+      )
+      noteServices.setToken(user.token)
+      setUser(user)
+      setUsername('')
+      setPassword('')
+    }
+    catch {
+      setErrorMessage('Wrong Credentials')
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    }
+  }
+
+  const handleLogOut = () => {
+    window.localStorage.removeItem('loggedNoteAppUser')
+    setUser(null)
+  }
+
+  const noteFormRef = useRef()
   return(
     <div>
+      {user === null 
+          ? <Togglable buttonLabel = "login">
+            <LoginForm username = {username} password = {password} handleSubmit={handleSubmit} handleUsernameChange={({target}) => setUsername(target.value)} handlePasswordChange={({target}) => setPassword(target.value)} />
+          </Togglable>
+          :
+          <div>
+            <p>{user.name} logged in</p>
+            <button type = "submit" onClick={handleLogOut}>Log Out</button>
+            <Togglable buttonLabel = 'Add Note' ref = {noteFormRef}>
+              <NoteForm createNote = {addNote} />
+            </Togglable>
+          </div> 
+          }
       <h2>Notes</h2>
-        <Notification message = {errorMessage} />
+      <Notification message = {errorMessage} />
+      
       <button onClick = {() => setShowAll(!showAll)}>
         show {showAll ? 'important' : 'All'}
       </button>
       <ul>
         {notestoShow.map(note => <Note key = {note.id} note = {note} toggleImportant={() => toggleImportanceOf(note.id)} />)}
       </ul>
-      <div>
-        <form onSubmit={addNote}>
-          <input value = {newNotes} onChange = {handleClick} />
-          <button type = "submit">add</button>
-        </form>
-      </div>
       <Footer />
     </div>
   )
 }
 
-export default App;
+Notification.propTypes = {
+  message : PropTypes.string.isRequired
+}
+
+export default App
