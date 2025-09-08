@@ -6,7 +6,35 @@ import Togglable from './component/Togglable'
 import LoginForm from './component/LoginForm'
 import NoteForm from './component/NoteForm'
 import PropTypes from 'prop-types'
+import {
+  BrowserRouter as Router,
+  Routes, Route, Link,
+  useParams,
+  useNavigate,
+  Navigate,
+  useMatch
+} from 'react-router-dom'
 
+const Home = () => {
+  return (
+    <div>
+      <h2>TLTK Note App</h2>
+    </div>
+  )
+}
+
+const Users = () => {
+  return (
+    <div>
+      <h2>TKTL notes app</h2>
+      <ul>
+        <li>Matti Luukkainen</li>
+        <li>Juha Tauriainen</li>
+        <li>Arto Hellas</li>
+      </ul>
+    </div>
+  )
+}
 
 
 const Notification = ( {message} ) => {
@@ -117,30 +145,69 @@ const App = () => {
   }
 
   const noteFormRef = useRef()
+
+  const match = useMatch('/notes/:id')
+  const note = match ? notes.find(n => n.id === Number(match.params.id)) : null
+
+  const padding = {
+    padding: 5
+  }
   return(
     <div>
-      {user === null 
-          ? <Togglable buttonLabel = "login">
-            <LoginForm username = {username} password = {password} handleSubmit={handleSubmit} handleUsernameChange={({target}) => setUsername(target.value)} handlePasswordChange={({target}) => setPassword(target.value)} />
-          </Togglable>
-          :
-          <div>
-            <p>{user.name} logged in</p>
-            <button type = "submit" onClick={handleLogOut}>Log Out</button>
-            <Togglable buttonLabel = 'Add Note' ref = {noteFormRef}>
-              <NoteForm createNote = {addNote} />
-            </Togglable>
-          </div> 
-          }
-      <h2>Notes</h2>
-      <Notification message = {errorMessage} />
+      {/*Navigation Bar */}
+      <div>
+        <Link style = {padding} to = "/">Home</Link>
+        <Link style = {padding} to = "/notes">Notes</Link>
+        <Link style = {padding} to = "/users">Users</Link>
+        {user 
+          ? <div><em>{user.name} logged in</em>
+            <button type = "submit" onClick={handleLogOut}>Log Out</button></div>
+          : <Link style = {padding} to = "/login">login</Link>}
+      </div>
+
       
-      <button onClick = {() => setShowAll(!showAll)}>
-        show {showAll ? 'important' : 'All'}
-      </button>
-      <ul>
-        {notestoShow.map(note => <Note key = {note.id} note = {note} toggleImportant={() => toggleImportanceOf(note.id)} />)}
-      </ul>
+      <Routes>
+        <Route path = "/notes" element = {
+          <div>
+            <h2>Notes</h2>
+            <Notification message = {errorMessage} />
+            
+            <button onClick = {() => setShowAll(!showAll)}>
+              show {showAll ? 'important' : 'All'}
+            </button>
+            <ul>
+              {notestoShow.map(note => <Note key = {note.id} note = {note} toggleImportant={() => toggleImportanceOf(note.id)} />)}
+            </ul>
+          </div>
+        } />
+        <Route path = "/" element = {user
+          ? <div>
+              <Home />
+              <div>
+                
+                <Togglable buttonLabel = 'Add Note' ref = {noteFormRef}>
+                  <NoteForm createNote = {addNote} />
+                </Togglable>
+              </div> 
+            </div>
+          : <Home />} />
+        <Route path = "/notes/:id" element = {note ? <Note note = {note} /> : <div>Note not found</div>} />
+        <Route path = "/users" element = {user ? <Users /> : <Navigate replace to = "/login" />} />
+        <Route path = "/login" element = {
+          <div>
+            {user === null 
+            ? <Togglable buttonLabel = "login">
+              <LoginForm username = {username} password = {password} handleSubmit={handleSubmit} handleUsernameChange={({target}) => setUsername(target.value)} handlePasswordChange={({target}) => setPassword(target.value)} />
+            </Togglable>
+            :
+            <Navigate replace to = "/" />
+            
+            }
+          </div>
+        } />
+      </Routes>
+      
+      
       <Footer />
     </div>
   )
