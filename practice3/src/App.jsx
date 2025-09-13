@@ -14,6 +14,7 @@ import {
   Navigate,
   useMatch
 } from 'react-router-dom'
+import {Table, Alert, Navbar, Nav} from 'react-bootstrap'
 
 const Home = () => {
   return (
@@ -42,7 +43,7 @@ const Notification = ( {message} ) => {
     return null
   }
   return (
-    <div className = "error">{message}</div>
+      <Alert variant = "success" className = "mt-3">{message}</Alert>
   )
 }
 
@@ -130,6 +131,10 @@ const App = () => {
       setUser(user)
       setUsername('')
       setPassword('')
+      setErrorMessage(`welcome ${user.username}`)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
     }
     catch {
       setErrorMessage('Wrong Credentials')
@@ -153,17 +158,34 @@ const App = () => {
     padding: 5
   }
   return(
-    <div>
+    <div className = "container">
       {/*Navigation Bar */}
-      <div>
-        <Link style = {padding} to = "/">Home</Link>
-        <Link style = {padding} to = "/notes">Notes</Link>
-        <Link style = {padding} to = "/users">Users</Link>
-        {user 
-          ? <div><em>{user.name} logged in</em>
-            <button type = "submit" onClick={handleLogOut}>Log Out</button></div>
-          : <Link style = {padding} to = "/login">login</Link>}
-      </div>
+      <Navbar collapseOnSelect expand = "lg" bg = "dark" variant = "dark">
+        <Navbar.Toggle aria-controls='responsive-navbar-nav' />
+        <Navbar.Collapse id = "responsive-navbar-nav">
+          <Nav className = "me-auto">
+            <Nav.Link href = "#" as = "span">
+              <Link style = {padding} to = "/">Home</Link>
+            </Nav.Link>
+            
+            <Nav.Link href = "#" as = "span">
+               <Link style = {padding} to = "/notes">Notes</Link>
+            </Nav.Link>
+           
+            <Nav.Link href = "#" as = "span">
+              <Link style = {padding} to = "/users">Users</Link>
+            </Nav.Link>
+            
+            <Nav.Link href = "#" as = "span">
+               {user 
+              ? <div><em>{user.name} logged in</em>
+                <button type = "submit" onClick={handleLogOut}>Log Out</button></div>
+              : <Link style = {padding} to = "/login">login</Link>}
+            </Nav.Link>
+           
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
 
       
       <Routes>
@@ -175,14 +197,19 @@ const App = () => {
             <button onClick = {() => setShowAll(!showAll)}>
               show {showAll ? 'important' : 'All'}
             </button>
-            <ul>
-              {notestoShow.map(note => <Note key = {note.id} note = {note} toggleImportant={() => toggleImportanceOf(note.id)} />)}
-            </ul>
+              <Table striped>
+                <tbody>
+                  {notestoShow.map(note => <Note key = {note.id} note = {note} toggleImportant={() => toggleImportanceOf(note.id)} />)}
+
+                </tbody>
+              </Table>
+            
           </div>
         } />
         <Route path = "/" element = {user
           ? <div>
               <Home />
+              <Notification message = {errorMessage} />
               <div>
                 
                 <Togglable buttonLabel = 'Add Note' ref = {noteFormRef}>
@@ -214,7 +241,7 @@ const App = () => {
 }
 
 Notification.propTypes = {
-  message : PropTypes.string.isRequired
+  message : PropTypes.string
 }
 
 export default App
